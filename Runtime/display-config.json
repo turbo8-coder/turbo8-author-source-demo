@@ -1,0 +1,13 @@
+{
+  "default": "turbo8",
+  "minDimension": 64,
+  "maxDimension": 512,
+  "maxPixels": 196608,
+  "maxAspect": 3,
+  "presets": [
+    {"id": "turbo8", "label": "TURBO8", "width": 256, "height": 144},
+    {"id": "pico8", "label": "PICO-8", "width": 128, "height": 128},
+    {"id": "fc", "label": "FC / NES", "width": 256, "height": 240},
+    {"id": "gba", "label": "GBA", "width": 240, "height": 160}
+  ]
+}

@@ -1,0 +1,36 @@
+name: Publish Turbo8 cartridges
+on: workflow_dispatch
+permissions:
+  contents: write
+concurrency:
+  group: publish-turbo8
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Prepare and publish the catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          previous=()
+          latest=$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')
+          if [[ -n "$latest" ]]; then
+            gh release download "$latest" --pattern catalog-v2.json --dir "$RUNNER_TEMP"
+            previous=(--previous "$RUNNER_TEMP/catalog-v2.json")
+          fi
+          tag="turbo8-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          out="$RUNNER_TEMP/turbo8-assets"
+          python3 tools/build_catalog.py "$tag" --output "$out" "${previous[@]}"
+          if [[ -n "$latest" ]] && cmp -s "$out/catalog-v2.json" "$RUNNER_TEMP/catalog-v2.json"; then
+            exit 0
+          fi
+          gh release create "$tag" --draft --target "$(git rev-parse HEAD)" --title "$tag" --notes "Turbo8 cartridge catalog."
+          gh release upload "$tag" "$out"/*
+          gh release edit "$tag" --draft=false --latest
